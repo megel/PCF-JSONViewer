@@ -1,14 +1,46 @@
 # PCF-JSONViewer
 
-PCF Control for PowerApps (canvas and model-driven apps) that visualizes JSON as pretty-printed text.
+PCF Control for PowerApps (canvas and model-driven apps) that visualizes JSON as pretty-printed text with syntax highlighting.
 
 ## Features
 
-- 📊 Pretty-print JSON data
-- 🎨 Syntax highlighting
+- 📊 Pretty-print JSON data with customizable indentation
+- 🎨 Syntax highlighting for improved readability
+- 📏 Automatic height adjustment based on content
+- 🔒 Read-only mode support
 - 📱 Works in both Canvas and Model-Driven apps
 - ⚡ Built with React and TypeScript
 - ✅ Comprehensive unit tests
+
+## Control Properties
+
+The JSONViewer control exposes the following configurable properties:
+
+### Content (Required)
+- **Type**: String (Multiple lines)
+- **Description**: The JSON text to display in the viewer
+- **Usage**: Bound property - typically bound to a field containing JSON data
+- **Example**: `{"name": "John", "age": 30, "city": "New York"}`
+
+### Indentation (Optional)
+- **Type**: Whole Number
+- **Description**: Set the indentation size for pretty printing the JSON
+- **Default**: 2
+- **Values**:
+  - `0`: Minimized output (no formatting, single line)
+  - `> 0`: Number of spaces to use for indentation
+- **Usage**: Input property
+- **Example**: 
+  - `2` → Standard 2-space indentation
+  - `4` → 4-space indentation
+  - `0` → Minimized: `{"name":"John","age":30}`
+
+### ReadOnly (Optional)
+- **Type**: Boolean (TwoOptions)
+- **Description**: Enable/disable editing mode
+- **Default**: True (read-only)
+- **Usage**: Input property
+- **Note**: Currently the control displays JSON in read-only mode. This property is reserved for future edit functionality.
 
 ## Prerequisites
 
@@ -88,7 +120,7 @@ PCF-JSONViewer/
 │   └── workflows/          # GitHub Actions CI/CD
 ├── JSONViewer/             # PCF control source code
 │   ├── __tests__/          # Unit tests
-│   ├── components/         # React components
+│   ├── JSONViewerComponent.tsx  # Main React component
 │   ├── index.ts            # Control entry point
 │   └── ControlManifest.Input.xml
 ├── Solution/               # Dataverse solution
@@ -125,11 +157,47 @@ The solution packages will be available in `Solution/bin/Release/`.
 
 ### Using the Control
 
-1. Open your Canvas or Model-Driven app
-2. Add a new field to your form
-3. Change the control to "JSONViewer"
-4. Configure the JSON input property
-5. Save and publish
+#### In Model-Driven Apps
+
+1. Open your Model-Driven app in the app designer
+2. Add a field to your form that contains JSON data (or create a new text field)
+3. Select the field and click "Change control" or "Components"
+4. Choose "JSONViewer" from the list of available controls
+5. Configure the control properties:
+   - **Content**: Bind to the field containing JSON data
+   - **Indentation**: Set the desired indentation (default: 2)
+   - **ReadOnly**: Set to true for display-only mode
+6. Save and publish your form
+
+#### In Canvas Apps
+
+1. Open your Canvas app in the Power Apps Studio
+2. Insert a new component and search for "JSONViewer"
+3. Configure the control properties in the properties panel:
+   - **Content**: Set to a variable or field containing JSON (e.g., `MyVariable` or `Gallery1.Selected.JSONData`)
+   - **Indentation**: Enter a number for indentation spacing (default: 2)
+   - **ReadOnly**: Toggle for read-only mode
+4. Save and publish your app
+
+#### Example Usage Scenarios
+
+**Display API Response:**
+```javascript
+// In Canvas App, set Content property to the JSON response
+// Note: The exact property name depends on your specific API connector
+YourAPIConnector.GetData().JSONResponse
+```
+
+**Show formatted configuration:**
+```javascript
+// Set Content property to a JSON string:
+"{""settings"": {""theme"": ""dark"", ""fontSize"": 14}}"
+```
+
+**Different indentation styles:**
+- Standard: `Indentation = 2`
+- Compact: `Indentation = 0` (single line)
+- Wide: `Indentation = 4`
 
 ## Development Guidelines
 
