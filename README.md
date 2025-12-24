@@ -208,7 +208,36 @@ Please refer to [Copilot Instructions](.github/copilot-instructions.md) for deta
 This project uses GitHub Actions for continuous integration and deployment:
 
 - **CI Workflow**: Runs on every push and PR, executes linting, testing, and building
-- **Package Workflow**: Creates solution packages on main branch and tags
+- **Auto-Tag Workflow**: Automatically creates patch version tags on successful main branch builds
+- **Create Release Workflow**: Manual workflow for creating major, minor, or custom version releases
+- **Package Workflow**: Builds solution packages and attaches them to GitHub releases
+
+### Automated Releases
+
+Every successful merge to `main` automatically:
+1. Increments the patch version (e.g., v1.0.0 → v1.0.1)
+2. Updates version in `package.json` and `Solution.xml`
+3. Creates a new Git tag
+4. Builds and packages the solution
+5. Creates a GitHub Release with artifacts
+
+### Manual Releases
+
+For major or minor version bumps:
+1. Go to **Actions** → **Create Release**
+2. Click **Run workflow**
+3. Select version bump type (major/minor/patch/custom)
+4. The workflow handles version updates, tagging, building, and release creation
+
+### Release Artifacts
+
+Each release includes:
+- Unmanaged solution package (`.zip`)
+- Managed solution package (`.zip`)
+
+Download from the [Releases page](https://github.com/megel/PCF-JSONViewer/releases).
+
+For detailed workflow documentation, see [docs/WORKFLOWS.md](docs/WORKFLOWS.md).
 
 ## Contributing
 
