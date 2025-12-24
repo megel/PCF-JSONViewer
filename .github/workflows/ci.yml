@@ -1,0 +1,63 @@
+name: CI - Build and Test
+
+on:
+  push:
+    branches: [ main, develop, copilot/** ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '6.x'
+        
+    - name: Install Power Platform CLI
+      run: |
+        dotnet tool install --global Microsoft.PowerApps.CLI.Tool
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run linting
+      run: npm run lint
+      
+    - name: Run tests
+      run: npm test
+      
+    - name: Run tests with coverage
+      run: npm run test:coverage
+      
+    - name: Build PCF control
+      run: npm run build
+      
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v4
+      if: success()
+      with:
+        files: ./coverage/lcov.info
+        flags: unittests
+        name: codecov-pcf-jsonviewer
+      continue-on-error: true
+      
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: pcf-build
+        path: |
+          out/
+          *.pcfproj
+        retention-days: 5
