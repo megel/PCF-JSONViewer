@@ -65,4 +65,3 @@ jobs:
       with:
         files: Solution/bin/Release/*.zip
         fail_on_unmatched_files: false
-      continue-on-error: true

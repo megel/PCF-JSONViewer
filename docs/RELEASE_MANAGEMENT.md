@@ -327,22 +327,15 @@ Monitor workflow runs:
 
 ### Pre-release Versions
 
-For beta/alpha releases:
+For beta/alpha releases, use the custom version option with pre-release identifiers:
 
-Use custom version with pre-release identifier:
 ```
 2.0.0-beta.1
 2.0.0-alpha.1
 2.0.0-rc.1
 ```
 
-### Maintenance Branches
-
-For maintaining older versions (not currently implemented):
-
-1. Create branch from old tag: `git checkout -b v1.x v1.2.3`
-2. Apply fixes to branch
-3. Manually create releases from branch
+**Note**: Pre-release versions work with the custom version bump type in the Create Release workflow.
 
 ## Resources
 

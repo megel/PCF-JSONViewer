@@ -137,7 +137,6 @@ jobs:
           VERSION_NO_V=${NEW_VERSION#v}
           
           # Update package.json using jq for safe JSON manipulation
-          sudo apt-get update -qq && sudo apt-get install -y -qq jq > /dev/null
           jq --arg version "$VERSION_NO_V" '.version = $version' package.json > package.json.tmp
           mv package.json.tmp package.json
           
