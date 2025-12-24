@@ -1,0 +1,64 @@
+name: Solution Packaging
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  package-solution:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '6.x'
+        
+    - name: Install Power Platform CLI
+      run: |
+        dotnet tool install --global Microsoft.PowerApps.CLI.Tool
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build PCF control
+      run: npm run build
+      
+    - name: Build solution
+      run: |
+        export PATH="$PATH:$HOME/.dotnet/tools"
+        cd Solution
+        dotnet build
+        
+    - name: Create managed solution
+      run: |
+        export PATH="$PATH:$HOME/.dotnet/tools"
+        cd Solution
+        dotnet build /p:configuration=Release
+        
+    - name: Upload solution artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: solution-packages
+        path: |
+          Solution/bin/Release/*.zip
+        retention-days: 30
+        
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: Solution/bin/Release/*.zip
+        generate_release_notes: true
