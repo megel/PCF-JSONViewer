@@ -183,8 +183,9 @@ The solution packages will be available in `Solution/bin/Release/`.
 
 **Display API Response:**
 ```javascript
-// In Canvas App, set Content property to:
-YourAPIConnector.GetData().responseJSON
+// In Canvas App, set Content property to the JSON response
+// Note: The exact property name depends on your specific API connector
+YourAPIConnector.GetData().JSONResponse
 ```
 
 **Show formatted configuration:**

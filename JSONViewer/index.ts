@@ -38,9 +38,9 @@ export class JSONViewer implements ComponentFramework.ReactControl<IInputs, IOut
         const readOnly = context.parameters.readOnly.raw ?? true;
         
         const props: IJSONViewerProps = {
-            content: content,
-            indentation: indentation,
-            readOnly: readOnly
+            content,
+            indentation,
+            readOnly
         };
         
         return React.createElement(JSONViewerComponent, props);

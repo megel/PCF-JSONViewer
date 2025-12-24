@@ -3,7 +3,7 @@ import * as React from 'react';
 export interface IJSONViewerProps {
   content: string;
   indentation: number;
-  readOnly: boolean;
+  readOnly: boolean; // Reserved for future edit functionality
 }
 
 /**
@@ -16,8 +16,8 @@ const formatJSON = (jsonString: string, indent: number): React.ReactElement | st
 
   try {
     const parsed: unknown = JSON.parse(jsonString);
-    const formatted = indent === 0 
-      ? JSON.stringify(parsed) 
+    const formatted = indent === 0
+      ? JSON.stringify(parsed)
       : JSON.stringify(parsed, null, indent);
     
     return highlightJSON(formatted);
@@ -30,7 +30,12 @@ const formatJSON = (jsonString: string, indent: number): React.ReactElement | st
  * Apply syntax highlighting to JSON string
  */
 const highlightJSON = (json: string): React.ReactElement => {
-  // Token regex pattern for JSON components
+  // Token regex pattern for JSON components:
+  // - Strings (with escaped characters): "..."
+  // - Property keys (strings followed by colon): "...":
+  // - Booleans: true, false
+  // - Null: null
+  // - Numbers: integers, decimals, scientific notation
   const jsonPattern = /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g;
   
   const parts: React.ReactNode[] = [];
@@ -80,6 +85,7 @@ const highlightJSON = (json: string): React.ReactElement => {
 
 /**
  * JSONViewer component for displaying formatted JSON with syntax highlighting
+ * Note: readOnly prop is reserved for future edit functionality
  */
 export const JSONViewerComponent: React.FC<IJSONViewerProps> = ({ content, indentation, readOnly }) => {
   const [height, setHeight] = React.useState<number>(200);
