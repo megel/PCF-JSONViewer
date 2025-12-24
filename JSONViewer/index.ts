@@ -1,5 +1,5 @@
 import { IInputs, IOutputs } from "./generated/ManifestTypes";
-import { HelloWorld, IHelloWorldProps } from "./HelloWorld";
+import { JSONViewerComponent, IJSONViewerProps } from "./JSONViewerComponent";
 import * as React from "react";
 
 export class JSONViewer implements ComponentFramework.ReactControl<IInputs, IOutputs> {
@@ -33,10 +33,17 @@ export class JSONViewer implements ComponentFramework.ReactControl<IInputs, IOut
      * @returns ReactElement root react element for the control
      */
     public updateView(context: ComponentFramework.Context<IInputs>): React.ReactElement {
-        const props: IHelloWorldProps = { name: 'Power Apps' };
-        return React.createElement(
-            HelloWorld, props
-        );
+        const content = context.parameters.content.raw ?? '';
+        const indentation = context.parameters.indentation.raw ?? 2;
+        const readOnly = context.parameters.readOnly.raw ?? true;
+        
+        const props: IJSONViewerProps = {
+            content: content,
+            indentation: indentation,
+            readOnly: readOnly
+        };
+        
+        return React.createElement(JSONViewerComponent, props);
     }
 
     /**

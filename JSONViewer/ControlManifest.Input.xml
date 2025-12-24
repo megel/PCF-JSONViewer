@@ -18,7 +18,9 @@
       -->
     </external-service-usage>
     <!-- property node identifies a specific, configurable piece of data that the control expects from CDS -->
-    <property name="sampleProperty" display-name-key="Property_Display_Key" description-key="Property_Desc_Key" of-type="SingleLine.Text" usage="bound" required="true" />
+    <property name="content" display-name-key="Content" description-key="The JSON text to display in the viewer" of-type="Multiple" usage="bound" required="true" />
+    <property name="indentation" display-name-key="Indentation" description-key="Indentation size for pretty printing (0 = minimized, >0 = number of spaces)" of-type="Whole.None" usage="input" required="false" default-value="2" />
+    <property name="readOnly" display-name-key="Read Only" description-key="Enable/disable editing (read-only mode)" of-type="TwoOptions" usage="input" required="false" default-value="true" />
     <!--
       Property node's of-type attribute can be of-type-group attribute.
       Example:
