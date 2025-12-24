@@ -325,17 +325,6 @@ Monitor workflow runs:
 
 ## Advanced Topics
 
-### Skipping Auto-Tag
-
-To merge without triggering auto-tag:
-
-Add `[skip-release]` to commit message:
-```bash
-git commit -m "chore: update docs [skip-release]"
-```
-
-**Note**: This feature is not currently implemented but can be added if needed.
-
 ### Pre-release Versions
 
 For beta/alpha releases:
