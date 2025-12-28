@@ -86,7 +86,7 @@ jobs:
           dotnet build /p:configuration=Release
 
           $name     = "${{ env.solution_name }}_managed_${{ env.solution_version }}_${{ env.version_part }}.zip".replace(" ", "_")
-          $artifact = "./src/solution/bin/Release/$name"
+          $artifact = "./src/Solution/bin/Release/$name"
           Write-Output "Artifact:  $artifact"
           mv ./bin/Release/Solution.zip "./bin/Release/$name"
 
