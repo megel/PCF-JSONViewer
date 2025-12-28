@@ -60,6 +60,7 @@ jobs:
           Write-Output "Version:  $solution_version"
           echo "solution_name=$solution_name" >> $env:GITHUB_ENV
           echo "solution_version=$solution_version" >> $env:GITHUB_ENV
+          echo "version_part=0" >> $env:GITHUB_ENV
 
       - name: Extract Tag Version
         if: startsWith(github.ref, 'refs/tags/')
@@ -87,7 +88,7 @@ jobs:
           $name     = "${{ env.solution_name }}_managed_${{ env.solution_version }}_${{ env.version_part }}.zip".replace(" ", "_")
           $artifact = "./src/solution/bin/Release/$name"
           Write-Output "Artifact:  $artifact"
-          mv ./bin/Release/solution.zip "./bin/Release/$name"
+          mv ./bin/Release/Solution.zip "./bin/Release/$name"
 
           echo "artifact_name=$name" >> $env:GITHUB_ENV
           echo "artifact=$artifact" >> $env:GITHUB_ENV
