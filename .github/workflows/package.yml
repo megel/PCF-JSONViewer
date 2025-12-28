@@ -45,11 +45,14 @@ jobs:
         cd Solution
         dotnet build
 
+    - name: Debugging - List Solution Directory Contents
+      run: ls -R Solution
+
     - name: Extract Solution Name and Version
       id: extract_info
       shell: pwsh
       run: |
-        $xml = [xml](Get-Content ./Solution/src/Other/solution.xml)
+        $xml = [xml](Get-Content ./Solution/src/Other/Solution.xml)
         $solution_version = $xml.ImportExportXml.SolutionManifest.Version
         $solution_name    = "$($xml.ImportExportXml.SolutionManifest.LocalizedNames.LocalizedName.description)".replace(" ", "_")
 
