@@ -45,6 +45,23 @@ jobs:
         cd Solution
         dotnet build
 
+    - name: Extract Solution Name and Version
+      id: extract_info
+      shell: pwsh
+      run: |
+        $xml = [xml](Get-Content ./Solution/src/Other/solution.xml)
+        $solution_version = $xml.ImportExportXml.SolutionManifest.Version
+        $solution_name    = "$($xml.ImportExportXml.SolutionManifest.LocalizedNames.LocalizedName.description)".replace(" ", "_")
+
+        Write-Output "Solution: $solution_name"
+        Write-Output "Version:  $solution_version"
+        echo "solution_name=$solution_name" >> $env:GITHUB_ENV
+        echo "solution_version=$solution_version" >> $env:GITHUB_ENV
+
+    - name: Check Version
+      run: |
+        echo "Output [$GITHUB_ENV[solution_name] v$GITHUB_ENV[solution_version]]"
+
     - name: Create managed solution
       id: build_solution
       shell: pwsh
@@ -60,25 +77,6 @@ jobs:
 
         echo "artifact_name=$name" >> $env:GITHUB_ENV
         echo "artifact=$artifact" >> $env:GITHUB_ENV
-
-    - name: "Check Version"
-      run: |
-        echo "Output [${{steps.extract_info.outputs.solution_name}} v${{steps.extract_info.outputs.solution_version}}]"
-
-    - name: Create managed solution
-      id:   "build_solution"
-      working-directory: ./Solution  # Sets the working directory to the solution directory
-      run: |
-        export PATH="$PATH:$HOME/.dotnet/tools"
-        dotnet build /p:configuration=Release
-
-        $name     = "${{ steps.extract_info.outputs.solution_name }}_managed_${{ steps.extract_info.outputs.solution_version }}.zip".replace(" ", "_")
-        $artifact = "./src/solution/bin/Release/$name"
-        echo "Artifact:  $artifact"
-        mv ./bin/Release/solution.zip "./bin/Release/$name"
-
-        echo "artifact_name=$name" | Out-File -FilePath $Env:GITHUB_OUTPUT -Encoding utf8 -Append
-        echo "artifact=$artifact" | Out-File -FilePath $Env:GITHUB_OUTPUT -Encoding utf8 -Append
 
     - name: Upload solution artifacts
       uses: actions/upload-artifact@v4
