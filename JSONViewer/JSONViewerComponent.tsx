@@ -12,6 +12,9 @@ export interface IJSONViewerProps {
   allocatedHeight?: number;
   allocatedWidth?: number;
   onContentChange?: (content: string) => void;
+  showCopyButton?: boolean;
+  copyButtonIcon?: string;
+  copyButtonSvg?: string;
 }
 
 /**
@@ -101,7 +104,10 @@ export const JSONViewerComponent: React.FC<IJSONViewerProps> = ({
   readOnly,
   allocatedHeight = -1,
   allocatedWidth = -1,
-  onContentChange 
+  onContentChange,
+  showCopyButton = true,
+  copyButtonIcon = '📋',
+  copyButtonSvg
 }) => {
   const contentRef = React.useRef<HTMLPreElement>(null);
   const [editableContent, setEditableContent] = React.useState<string>(content);
@@ -199,7 +205,7 @@ export const JSONViewerComponent: React.FC<IJSONViewerProps> = ({
   const preStyle: React.CSSProperties = {
     margin: 0,
     padding: '12px',
-    paddingTop: `${CONTENT_PADDING_TOP}px`,
+    paddingTop: showCopyButton ? `${CONTENT_PADDING_TOP}px` : '12px',
     whiteSpace: 'pre',
     overflow: 'visible',
     userSelect: 'text',
@@ -227,19 +233,48 @@ export const JSONViewerComponent: React.FC<IJSONViewerProps> = ({
     boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
   };
   
+  // Render button content based on state and icon type
+  const renderButtonContent = () => {
+    if (copySuccess) {
+      return '✓ Copied!';
+    }
+    
+    if (copyButtonSvg) {
+      // Render SVG icon with "Copy" text
+      return (
+        <>
+          <span 
+            dangerouslySetInnerHTML={{ __html: copyButtonSvg }} 
+            style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              marginRight: '4px',
+              verticalAlign: 'middle'
+            }}
+          />
+          <span>Copy</span>
+        </>
+      );
+    }
+    
+    return `${copyButtonIcon} Copy`;
+  };
+  
   return (
     <div style={containerStyle}>
-      <div style={buttonContainerStyle}>
-        <button 
-          style={buttonStyle}
-          onClick={() => { void handleCopy(); }}
-          onMouseEnter={() => setIsHovering(true)}
-          onMouseLeave={() => setIsHovering(false)}
-          title="Copy to clipboard"
-        >
-          {copySuccess ? '✓ Copied!' : '📋 Copy'}
-        </button>
-      </div>
+      {showCopyButton && (
+        <div style={buttonContainerStyle}>
+          <button 
+            style={buttonStyle}
+            onClick={() => { void handleCopy(); }}
+            onMouseEnter={() => setIsHovering(true)}
+            onMouseLeave={() => setIsHovering(false)}
+            title="Copy to clipboard"
+          >
+            {renderButtonContent()}
+          </button>
+        </div>
+      )}
       <pre 
         ref={contentRef} 
         style={preStyle}

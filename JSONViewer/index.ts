@@ -37,6 +37,9 @@ export class JSONViewer implements ComponentFramework.ReactControl<IInputs, IOut
         const content = context.parameters.content.raw ?? '';
         const indentation = context.parameters.indentation.raw ?? 2;
         const readOnly = context.parameters.readOnly.raw ?? true;
+        const showCopyButton = context.parameters.showCopyButton.raw ?? true;
+        const copyButtonIcon = context.parameters.copyButtonIcon.raw ?? '📋';
+        const copyButtonSvg = context.parameters.copyButtonSvg.raw ?? undefined;
         
         this.currentContent = content;
         
@@ -49,7 +52,10 @@ export class JSONViewer implements ComponentFramework.ReactControl<IInputs, IOut
             onContentChange: (newContent: string) => {
                 this.currentContent = newContent;
                 this.notifyOutputChanged();
-            }
+            },
+            showCopyButton,
+            copyButtonIcon,
+            copyButtonSvg
         };
         
         return React.createElement(JSONViewerComponent, props);

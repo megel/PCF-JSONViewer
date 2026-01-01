@@ -204,4 +204,82 @@ describe('JSONViewerComponent', () => {
     const divElement = container.firstChild as HTMLElement;
     expect(divElement).toHaveStyle({ height: '400px' });
   });
+
+  it('hides copy button when showCopyButton is false', () => {
+    const jsonContent = '{"test":"value"}';
+    render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        showCopyButton={false}
+      />
+    );
+    
+    const copyButton = screen.queryByTitle('Copy to clipboard');
+    expect(copyButton).not.toBeInTheDocument();
+  });
+
+  it('shows copy button when showCopyButton is true', () => {
+    const jsonContent = '{"test":"value"}';
+    render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        showCopyButton={true}
+      />
+    );
+    
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    expect(copyButton).toBeInTheDocument();
+  });
+
+  it('uses custom icon when copyButtonIcon is provided', () => {
+    const jsonContent = '{"test":"value"}';
+    render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        copyButtonIcon="📄"
+      />
+    );
+    
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    expect(copyButton).toHaveTextContent('📄 Copy');
+  });
+
+  it('renders SVG icon when copyButtonSvg is provided', () => {
+    const jsonContent = '{"test":"value"}';
+    const svgIcon = '<svg width="16" height="16"><rect width="16" height="16" fill="blue"/></svg>';
+    const { container } = render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        copyButtonSvg={svgIcon}
+      />
+    );
+    
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    expect(copyButton).toBeInTheDocument();
+    const svgElement = container.querySelector('svg');
+    expect(svgElement).toBeInTheDocument();
+  });
+
+  it('adjusts padding when copy button is hidden', () => {
+    const jsonContent = '{"test":"value"}';
+    const { container } = render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        showCopyButton={false}
+      />
+    );
+    
+    const preElement = container.querySelector('pre') as HTMLElement;
+    expect(preElement).toHaveStyle({ paddingTop: '12px' });
+  });
 });
