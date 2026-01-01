@@ -101,6 +101,7 @@ export const JSONViewerComponent: React.FC<IJSONViewerProps> = ({
   const contentRef = React.useRef<HTMLPreElement>(null);
   const [editableContent, setEditableContent] = React.useState<string>(content);
   const [copySuccess, setCopySuccess] = React.useState<boolean>(false);
+  const [isHovering, setIsHovering] = React.useState<boolean>(false);
   
   // Update editable content when prop changes
   React.useEffect(() => {
@@ -130,18 +131,32 @@ export const JSONViewerComponent: React.FC<IJSONViewerProps> = ({
         await navigator.clipboard.writeText(textToCopy);
         setCopySuccess(true);
         setTimeout(() => setCopySuccess(false), 2000);
-      } catch {
-        // Fallback for older browsers
-        const textArea = document.createElement('textarea');
-        textArea.value = textToCopy;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        setCopySuccess(true);
-        setTimeout(() => setCopySuccess(false), 2000);
+      } catch (clipboardError) {
+        // Fallback: create a temporary text area for older browsers
+        console.warn('Clipboard API not available, using fallback method', clipboardError);
+        try {
+          const textArea = document.createElement('textarea');
+          textArea.value = textToCopy;
+          textArea.style.position = 'fixed';
+          textArea.style.left = '-999999px';
+          textArea.style.top = '0';
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          
+          // Try to copy using the older document.execCommand (deprecated but widely supported)
+          const successful = document.execCommand('copy');
+          document.body.removeChild(textArea);
+          
+          if (successful) {
+            setCopySuccess(true);
+            setTimeout(() => setCopySuccess(false), 2000);
+          } else {
+            console.error('Fallback copy method failed');
+          }
+        } catch (fallbackError) {
+          console.error('All copy methods failed:', fallbackError);
+        }
       }
     } catch (error) {
       console.error('Failed to copy:', error);
@@ -195,7 +210,7 @@ export const JSONViewerComponent: React.FC<IJSONViewerProps> = ({
   
   const buttonStyle: React.CSSProperties = {
     padding: '6px 12px',
-    backgroundColor: copySuccess ? '#4caf50' : '#2196f3',
+    backgroundColor: copySuccess ? '#4caf50' : (isHovering ? '#1976d2' : '#2196f3'),
     color: 'white',
     border: 'none',
     borderRadius: '4px',
@@ -212,16 +227,8 @@ export const JSONViewerComponent: React.FC<IJSONViewerProps> = ({
         <button 
           style={buttonStyle}
           onClick={() => { void handleCopy(); }}
-          onMouseOver={(e) => {
-            if (!copySuccess) {
-              e.currentTarget.style.backgroundColor = '#1976d2';
-            }
-          }}
-          onMouseOut={(e) => {
-            if (!copySuccess) {
-              e.currentTarget.style.backgroundColor = '#2196f3';
-            }
-          }}
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
           title="Copy to clipboard"
         >
           {copySuccess ? '✓ Copied!' : '📋 Copy'}
