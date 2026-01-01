@@ -20,42 +20,113 @@ export interface IJSONViewerProps {
 
 /**
  * Sanitize SVG content to prevent XSS attacks
- * Removes script tags, event handlers, and dangerous elements
+ * Uses DOMParser to parse and validate SVG, then reconstructs it safely
  */
 const sanitizeSvg = (svg: string): string => {
   if (!svg) return '';
   
-  // Remove script tags and their content
-  let sanitized = svg.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-  
-  // Remove event handler attributes (onclick, onload, etc.)
-  sanitized = sanitized.replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '');
-  
-  // Remove javascript: protocol
-  sanitized = sanitized.replace(/javascript:/gi, '');
-  
-  // Remove data URIs that could contain scripts
-  sanitized = sanitized.replace(/data:text\/html/gi, '');
-  
-  // Only allow safe SVG elements - remove any other tags
-  const allowedElements = ['svg', 'path', 'circle', 'rect', 'line', 'polyline', 'polygon', 'ellipse', 'g', 'defs', 'use'];
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(sanitized, 'image/svg+xml');
-  
-  // Check for parsing errors
-  const parserError = doc.querySelector('parsererror');
-  if (parserError) {
-    console.warn('SVG parsing error, rejecting content');
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svg, 'image/svg+xml');
+    
+    // Check for parsing errors
+    const parserError = doc.querySelector('parsererror');
+    if (parserError) {
+      console.warn('SVG parsing error, rejecting content');
+      return '';
+    }
+    
+    // Validate that root element is SVG
+    const svgElement = doc.documentElement;
+    if (svgElement.nodeName.toLowerCase() !== 'svg') {
+      console.warn('Invalid SVG: root element must be <svg>');
+      return '';
+    }
+    
+    // Allowlist of safe SVG elements
+    const allowedElements = new Set([
+      'svg', 'path', 'circle', 'rect', 'line', 'polyline', 
+      'polygon', 'ellipse', 'g', 'defs', 'use', 'text', 
+      'tspan', 'title', 'desc'
+    ]);
+    
+    // Allowlist of safe attributes
+    const allowedAttributes = new Set([
+      'width', 'height', 'viewBox', 'fill', 'stroke', 'stroke-width',
+      'd', 'cx', 'cy', 'r', 'x', 'y', 'x1', 'y1', 'x2', 'y2',
+      'points', 'transform', 'opacity', 'fill-opacity', 'stroke-opacity',
+      'xmlns', 'version', 'stroke-linecap', 'stroke-linejoin',
+      'stroke-dasharray', 'stroke-dashoffset', 'rx', 'ry'
+    ]);
+    
+    // Recursively clean elements
+    const cleanElement = (element: Element): Element | null => {
+      const tagName = element.nodeName.toLowerCase();
+      
+      // Remove non-allowed elements
+      if (!allowedElements.has(tagName)) {
+        console.warn(`Removing disallowed element: ${tagName}`);
+        return null;
+      }
+      
+      // Create a clean copy of the element
+      const cleanedElement = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+      
+      // Copy allowed attributes only
+      for (const attr of Array.from(element.attributes)) {
+        const attrName = attr.name.toLowerCase();
+        
+        // Skip event handlers and dangerous attributes
+        if (attrName.startsWith('on')) {
+          console.warn(`Removing event handler: ${attrName}`);
+          continue;
+        }
+        
+        // Check for javascript: or data: URIs in href/xlink:href
+        if ((attrName === 'href' || attrName === 'xlink:href') && attr.value) {
+          const lowerValue = attr.value.toLowerCase().trim();
+          if (lowerValue.startsWith('javascript:') || 
+              lowerValue.startsWith('data:') ||
+              lowerValue.startsWith('vbscript:')) {
+            console.warn(`Removing dangerous URI: ${attr.value}`);
+            continue;
+          }
+        }
+        
+        // Only copy allowed attributes
+        if (allowedAttributes.has(attrName) || attrName.startsWith('stroke') || attrName.startsWith('fill')) {
+          cleanedElement.setAttribute(attrName, attr.value);
+        }
+      }
+      
+      // Recursively clean children
+      for (const child of Array.from(element.childNodes)) {
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          const cleanedChild = cleanElement(child as Element);
+          if (cleanedChild) {
+            cleanedElement.appendChild(cleanedChild);
+          }
+        } else if (child.nodeType === Node.TEXT_NODE) {
+          // Allow text nodes (for <text> elements)
+          cleanedElement.appendChild(document.createTextNode(child.textContent ?? ''));
+        }
+      }
+      
+      return cleanedElement;
+    };
+    
+    const cleanedSvg = cleanElement(svgElement);
+    if (!cleanedSvg) {
+      return '';
+    }
+    
+    // Serialize back to string
+    const serializer = new XMLSerializer();
+    return serializer.serializeToString(cleanedSvg);
+  } catch (error) {
+    console.error('Error sanitizing SVG:', error);
     return '';
   }
-  
-  // Validate that root element is SVG
-  if (doc.documentElement.nodeName.toLowerCase() !== 'svg') {
-    console.warn('Invalid SVG: root element must be <svg>');
-    return '';
-  }
-  
-  return sanitized;
 };
 
 /**
