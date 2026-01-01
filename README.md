@@ -203,6 +203,22 @@ YourAPIConnector.GetData().JSONResponse
 
 Please refer to [Copilot Instructions](.github/copilot-instructions.md) for detailed development guidelines and best practices.
 
+## Technical Notes
+
+### FluentUI Version Compatibility
+
+This control uses FluentUI v9.68.0 for its React components. Due to Power Platform limitations, the `ControlManifest.Input.xml` file declares FluentUI version `9.46.2` while `package.json` specifies `@fluentui/react-components` version `9.68.0`.
+
+**Why this approach?**
+- Power Platform's supported library list doesn't include FluentUI 9.68.0 directly
+- The platform will load FluentUI 9.68.0 at runtime despite the manifest declaring 9.46.2
+- This is the [recommended workaround](https://learn.microsoft.com/en-us/power-apps/developer/component-framework/react-controls-platform-libraries#supported-platform-libraries-list) from Microsoft
+
+**Important:** When updating FluentUI versions:
+1. Update `@fluentui/react-components` in `package.json` to the desired version
+2. Keep the `platform-library` version in `ControlManifest.Input.xml` at `9.46.2` (or latest officially supported version)
+3. Test thoroughly in both Canvas and Model-Driven apps
+
 ## CI/CD
 
 This project uses GitHub Actions for continuous integration and deployment:
