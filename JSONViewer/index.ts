@@ -40,7 +40,13 @@ export class JSONViewer implements ComponentFramework.ReactControl<IInputs, IOut
         const props: IJSONViewerProps = {
             content,
             indentation,
-            readOnly
+            readOnly,
+            allocatedHeight: context.mode.allocatedHeight,
+            allocatedWidth: context.mode.allocatedWidth,
+            onContentChange: (newContent: string) => {
+                context.parameters.content.raw = newContent;
+                this.notifyOutputChanged();
+            }
         };
         
         return React.createElement(JSONViewerComponent, props);
@@ -51,7 +57,7 @@ export class JSONViewer implements ComponentFramework.ReactControl<IInputs, IOut
      * @returns an object based on nomenclature defined in manifest, expecting object[s] for property marked as "bound" or "output"
      */
     public getOutputs(): IOutputs {
-        return { };
+        return {} as IOutputs;
     }
 
     /**

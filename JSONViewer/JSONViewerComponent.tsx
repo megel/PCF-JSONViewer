@@ -3,7 +3,10 @@ import * as React from 'react';
 export interface IJSONViewerProps {
   content: string;
   indentation: number;
-  readOnly: boolean; // Reserved for future edit functionality
+  readOnly: boolean;
+  allocatedHeight?: number;
+  allocatedWidth?: number;
+  onContentChange?: (content: string) => void;
 }
 
 /**
@@ -85,30 +88,84 @@ const highlightJSON = (json: string): React.ReactElement => {
 
 /**
  * JSONViewer component for displaying formatted JSON with syntax highlighting
- * Note: readOnly prop is reserved for future edit functionality
+ * Supports editing when readOnly is false and includes copy to clipboard functionality
  */
-export const JSONViewerComponent: React.FC<IJSONViewerProps> = ({ content, indentation, readOnly }) => {
-  const [height, setHeight] = React.useState<number>(200);
+export const JSONViewerComponent: React.FC<IJSONViewerProps> = ({ 
+  content, 
+  indentation, 
+  readOnly,
+  allocatedHeight = -1,
+  allocatedWidth = -1,
+  onContentChange 
+}) => {
   const contentRef = React.useRef<HTMLPreElement>(null);
+  const [editableContent, setEditableContent] = React.useState<string>(content);
+  const [copySuccess, setCopySuccess] = React.useState<boolean>(false);
   
-  // Calculate and update height based on content
+  // Update editable content when prop changes
   React.useEffect(() => {
-    if (contentRef.current) {
-      const scrollHeight = contentRef.current.scrollHeight;
-      // Add some padding for better visibility
-      const newHeight = Math.max(100, Math.min(scrollHeight + 20, 800));
-      setHeight(newHeight);
-    }
-  }, [content, indentation]);
+    setEditableContent(content);
+  }, [content]);
   
   const formattedContent = React.useMemo(
-    () => formatJSON(content, indentation),
-    [content, indentation]
+    () => formatJSON(editableContent, indentation),
+    [editableContent, indentation]
   );
   
+  // Handle copy to clipboard
+  const handleCopy = React.useCallback(async () => {
+    try {
+      // Try to copy the formatted JSON
+      let textToCopy = editableContent;
+      try {
+        const parsed: unknown = JSON.parse(editableContent);
+        textToCopy = indentation === 0 
+          ? JSON.stringify(parsed) 
+          : JSON.stringify(parsed, null, indentation);
+      } catch {
+        // If parsing fails, copy as-is
+      }
+      
+      try {
+        await navigator.clipboard.writeText(textToCopy);
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+      } catch {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = textToCopy;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+      }
+    } catch (error) {
+      console.error('Failed to copy:', error);
+    }
+  }, [editableContent, indentation]);
+  
+  // Handle content edit
+  const handleContentEdit = React.useCallback((e: React.FormEvent<HTMLPreElement>) => {
+    const target = e.currentTarget as HTMLPreElement;
+    const newContent = target.textContent || '';
+    setEditableContent(newContent);
+    if (onContentChange) {
+      onContentChange(newContent);
+    }
+  }, [onContentChange]);
+  
+  // Calculate container dimensions
+  const containerHeight = allocatedHeight > 0 ? allocatedHeight : 400;
+  const containerWidth = allocatedWidth > 0 ? allocatedWidth : '100%';
+  
   const containerStyle: React.CSSProperties = {
-    width: '100%',
-    height: `${height}px`,
+    position: 'relative',
+    width: typeof containerWidth === 'number' ? `${containerWidth}px` : containerWidth,
+    height: `${containerHeight}px`,
     border: '1px solid #d1d1d1',
     borderRadius: '4px',
     backgroundColor: '#f5f5f5',
@@ -121,13 +178,62 @@ export const JSONViewerComponent: React.FC<IJSONViewerProps> = ({ content, inden
   const preStyle: React.CSSProperties = {
     margin: 0,
     padding: '12px',
+    paddingTop: '40px', // Space for copy button
     whiteSpace: 'pre',
     overflow: 'visible',
+    userSelect: 'text',
+    WebkitUserSelect: 'text',
+    outline: 'none',
+  };
+  
+  const buttonContainerStyle: React.CSSProperties = {
+    position: 'absolute',
+    top: '8px',
+    right: '8px',
+    zIndex: 10,
+  };
+  
+  const buttonStyle: React.CSSProperties = {
+    padding: '6px 12px',
+    backgroundColor: copySuccess ? '#4caf50' : '#2196f3',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '12px',
+    fontFamily: 'system-ui, -apple-system, sans-serif',
+    transition: 'background-color 0.2s',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
   };
   
   return (
     <div style={containerStyle}>
-      <pre ref={contentRef} style={preStyle}>
+      <div style={buttonContainerStyle}>
+        <button 
+          style={buttonStyle}
+          onClick={() => { void handleCopy(); }}
+          onMouseOver={(e) => {
+            if (!copySuccess) {
+              e.currentTarget.style.backgroundColor = '#1976d2';
+            }
+          }}
+          onMouseOut={(e) => {
+            if (!copySuccess) {
+              e.currentTarget.style.backgroundColor = '#2196f3';
+            }
+          }}
+          title="Copy to clipboard"
+        >
+          {copySuccess ? '✓ Copied!' : '📋 Copy'}
+        </button>
+      </div>
+      <pre 
+        ref={contentRef} 
+        style={preStyle}
+        contentEditable={!readOnly}
+        onInput={handleContentEdit}
+        suppressContentEditableWarning={true}
+      >
         {formattedContent}
       </pre>
     </div>
