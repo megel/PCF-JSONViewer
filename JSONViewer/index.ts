@@ -4,12 +4,13 @@ import * as React from "react";
 
 export class JSONViewer implements ComponentFramework.ReactControl<IInputs, IOutputs> {
     private notifyOutputChanged: () => void;
+    private currentContent: string;
 
     /**
      * Empty constructor.
      */
     constructor() {
-        // Empty
+        this.currentContent = '';
     }
 
     /**
@@ -37,6 +38,8 @@ export class JSONViewer implements ComponentFramework.ReactControl<IInputs, IOut
         const indentation = context.parameters.indentation.raw ?? 2;
         const readOnly = context.parameters.readOnly.raw ?? true;
         
+        this.currentContent = content;
+        
         const props: IJSONViewerProps = {
             content,
             indentation,
@@ -44,7 +47,7 @@ export class JSONViewer implements ComponentFramework.ReactControl<IInputs, IOut
             allocatedHeight: context.mode.allocatedHeight,
             allocatedWidth: context.mode.allocatedWidth,
             onContentChange: (newContent: string) => {
-                context.parameters.content.raw = newContent;
+                this.currentContent = newContent;
                 this.notifyOutputChanged();
             }
         };
@@ -57,7 +60,9 @@ export class JSONViewer implements ComponentFramework.ReactControl<IInputs, IOut
      * @returns an object based on nomenclature defined in manifest, expecting object[s] for property marked as "bound" or "output"
      */
     public getOutputs(): IOutputs {
-        return {} as IOutputs;
+        return {
+            content: this.currentContent
+        };
     }
 
     /**

@@ -1,5 +1,10 @@
 import * as React from 'react';
 
+// Constants
+const COPY_BUTTON_HEIGHT = 32; // Height of copy button including padding
+const CONTAINER_TOP_PADDING = 8; // Top padding of the container
+const CONTENT_PADDING_TOP = COPY_BUTTON_HEIGHT + CONTAINER_TOP_PADDING; // Total padding for content
+
 export interface IJSONViewerProps {
   content: string;
   indentation: number;
@@ -133,6 +138,7 @@ export const JSONViewerComponent: React.FC<IJSONViewerProps> = ({
         setTimeout(() => setCopySuccess(false), 2000);
       } catch (clipboardError) {
         // Fallback: create a temporary text area for older browsers
+        // Note: document.execCommand is deprecated but still widely supported for legacy browser compatibility
         console.warn('Clipboard API not available, using fallback method', clipboardError);
         try {
           const textArea = document.createElement('textarea');
@@ -193,7 +199,7 @@ export const JSONViewerComponent: React.FC<IJSONViewerProps> = ({
   const preStyle: React.CSSProperties = {
     margin: 0,
     padding: '12px',
-    paddingTop: '40px', // Space for copy button
+    paddingTop: `${CONTENT_PADDING_TOP}px`,
     whiteSpace: 'pre',
     overflow: 'visible',
     userSelect: 'text',
@@ -203,7 +209,7 @@ export const JSONViewerComponent: React.FC<IJSONViewerProps> = ({
   
   const buttonContainerStyle: React.CSSProperties = {
     position: 'absolute',
-    top: '8px',
+    top: `${CONTAINER_TOP_PADDING}px`,
     right: '8px',
     zIndex: 10,
   };
