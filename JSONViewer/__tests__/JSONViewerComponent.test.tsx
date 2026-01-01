@@ -282,4 +282,54 @@ describe('JSONViewerComponent', () => {
     const preElement = container.querySelector('pre') as HTMLElement;
     expect(preElement).toHaveStyle({ paddingTop: '12px' });
   });
+
+  it('sanitizes unsafe SVG content', () => {
+    const jsonContent = '{"test":"value"}';
+    const unsafeSvg = '<svg><script>alert("xss")</script><rect onclick="alert(1)"/></svg>';
+    
+    // Mock console.warn to verify it was called
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    
+    const { container } = render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        copyButtonSvg={unsafeSvg}
+      />
+    );
+    
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    expect(copyButton).toBeInTheDocument();
+    
+    // Should not contain script tags
+    const scriptElement = container.querySelector('script');
+    expect(scriptElement).not.toBeInTheDocument();
+    
+    consoleWarnSpy.mockRestore();
+  });
+
+  it('falls back to icon when SVG is invalid', () => {
+    const jsonContent = '{"test":"value"}';
+    const invalidSvg = '<notsvg>invalid</notsvg>';
+    
+    // Mock console.warn
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    
+    render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        copyButtonIcon="📄"
+        copyButtonSvg={invalidSvg}
+      />
+    );
+    
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    expect(copyButton).toHaveTextContent('📄 Copy');
+    expect(consoleWarnSpy).toHaveBeenCalled();
+    
+    consoleWarnSpy.mockRestore();
+  });
 });

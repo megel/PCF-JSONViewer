@@ -4,6 +4,7 @@ import * as React from 'react';
 const COPY_BUTTON_HEIGHT = 32; // Height of copy button including padding
 const CONTAINER_TOP_PADDING = 8; // Top padding of the container
 const CONTENT_PADDING_TOP = COPY_BUTTON_HEIGHT + CONTAINER_TOP_PADDING; // Total padding for content
+const DEFAULT_CONTAINER_HEIGHT = 400; // Default height when not specified by parent
 
 export interface IJSONViewerProps {
   content: string;
@@ -16,6 +17,46 @@ export interface IJSONViewerProps {
   copyButtonIcon?: string;
   copyButtonSvg?: string;
 }
+
+/**
+ * Sanitize SVG content to prevent XSS attacks
+ * Removes script tags, event handlers, and dangerous elements
+ */
+const sanitizeSvg = (svg: string): string => {
+  if (!svg) return '';
+  
+  // Remove script tags and their content
+  let sanitized = svg.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  
+  // Remove event handler attributes (onclick, onload, etc.)
+  sanitized = sanitized.replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '');
+  
+  // Remove javascript: protocol
+  sanitized = sanitized.replace(/javascript:/gi, '');
+  
+  // Remove data URIs that could contain scripts
+  sanitized = sanitized.replace(/data:text\/html/gi, '');
+  
+  // Only allow safe SVG elements - remove any other tags
+  const allowedElements = ['svg', 'path', 'circle', 'rect', 'line', 'polyline', 'polygon', 'ellipse', 'g', 'defs', 'use'];
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(sanitized, 'image/svg+xml');
+  
+  // Check for parsing errors
+  const parserError = doc.querySelector('parsererror');
+  if (parserError) {
+    console.warn('SVG parsing error, rejecting content');
+    return '';
+  }
+  
+  // Validate that root element is SVG
+  if (doc.documentElement.nodeName.toLowerCase() !== 'svg') {
+    console.warn('Invalid SVG: root element must be <svg>');
+    return '';
+  }
+  
+  return sanitized;
+};
 
 /**
  * Format JSON with syntax highlighting
@@ -186,7 +227,7 @@ export const JSONViewerComponent: React.FC<IJSONViewerProps> = ({
   }, [onContentChange]);
   
   // Calculate container dimensions
-  const containerHeight = allocatedHeight > 0 ? allocatedHeight : 400;
+  const containerHeight = allocatedHeight > 0 ? allocatedHeight : DEFAULT_CONTAINER_HEIGHT;
   const containerWidth = allocatedWidth > 0 ? allocatedWidth : '100%';
   
   const containerStyle: React.CSSProperties = {
@@ -240,11 +281,18 @@ export const JSONViewerComponent: React.FC<IJSONViewerProps> = ({
     }
     
     if (copyButtonSvg) {
-      // Render SVG icon with "Copy" text
+      // Sanitize and render SVG icon with "Copy" text
+      const sanitizedSvg = sanitizeSvg(copyButtonSvg);
+      if (!sanitizedSvg) {
+        // If SVG is invalid or unsafe, fall back to default icon
+        console.warn('Invalid or unsafe SVG provided, using default icon');
+        return `${copyButtonIcon} Copy`;
+      }
+      
       return (
         <>
           <span 
-            dangerouslySetInnerHTML={{ __html: copyButtonSvg }} 
+            dangerouslySetInnerHTML={{ __html: sanitizedSvg }} 
             style={{ 
               display: 'inline-flex', 
               alignItems: 'center', 
