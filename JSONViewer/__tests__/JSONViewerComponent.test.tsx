@@ -205,6 +205,51 @@ describe('JSONViewerComponent', () => {
     expect(divElement).toHaveStyle({ height: '400px' });
   });
 
+  it('uses 100% height when allocatedHeight is -1', () => {
+    const jsonContent = '{"test":"value"}';
+    const { container } = render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        allocatedHeight={-1}
+      />
+    );
+    
+    const divElement = container.firstChild as HTMLElement;
+    expect(divElement).toHaveStyle({ height: '100%' });
+  });
+
+  it('uses 100% width when allocatedWidth is -1', () => {
+    const jsonContent = '{"test":"value"}';
+    const { container } = render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        allocatedWidth={-1}
+      />
+    );
+    
+    const divElement = container.firstChild as HTMLElement;
+    expect(divElement).toHaveStyle({ width: '100%' });
+  });
+
+  it('uses default height when allocatedHeight is 0', () => {
+    const jsonContent = '{"test":"value"}';
+    const { container } = render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        allocatedHeight={0}
+      />
+    );
+    
+    const divElement = container.firstChild as HTMLElement;
+    expect(divElement).toHaveStyle({ height: '400px' });
+  });
+
   it('hides copy button when showCopyButton is false', () => {
     const jsonContent = '{"test":"value"}';
     render(
