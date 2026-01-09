@@ -214,8 +214,8 @@ export const JSONViewerComponent: React.FC<IJSONViewerProps> = ({
   content, 
   indentation, 
   readOnly,
-  allocatedHeight = -1,
-  allocatedWidth = -1,
+  allocatedHeight,
+  allocatedWidth,
   onContentChange,
   showCopyButton = true,
   copyButtonIcon = '📋',
@@ -298,13 +298,23 @@ export const JSONViewerComponent: React.FC<IJSONViewerProps> = ({
   }, [onContentChange]);
   
   // Calculate container dimensions
-  const containerHeight = allocatedHeight > 0 ? allocatedHeight : DEFAULT_CONTAINER_HEIGHT;
-  const containerWidth = allocatedWidth > 0 ? allocatedWidth : '100%';
+  // When allocatedHeight is -1, it means the control should fill available space (use 100%)
+  // When allocatedHeight is undefined or 0, use a default height
+  // When allocatedHeight > 0, use the specific allocated height
+  const containerHeight = 
+    allocatedHeight === -1 ? '100%' : 
+    (allocatedHeight !== undefined && allocatedHeight > 0) ? `${allocatedHeight}px` : 
+    `${DEFAULT_CONTAINER_HEIGHT}px`;
+  
+  const containerWidth = 
+    allocatedWidth === -1 ? '100%' : 
+    (allocatedWidth !== undefined && allocatedWidth > 0) ? `${allocatedWidth}px` : 
+    '100%';
   
   const containerStyle: React.CSSProperties = {
     position: 'relative',
-    width: typeof containerWidth === 'number' ? `${containerWidth}px` : containerWidth,
-    height: `${containerHeight}px`,
+    width: containerWidth,
+    height: containerHeight,
     border: '1px solid #d1d1d1',
     borderRadius: '4px',
     backgroundColor: '#f5f5f5',
