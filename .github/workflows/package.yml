@@ -2,9 +2,9 @@ name: Solution Packaging
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 permissions:
@@ -13,80 +13,96 @@ permissions:
 jobs:
   package-solution:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-        
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '6.x'
-        
-    - name: Install Power Platform CLI
-      run: |
-        dotnet tool install --global Microsoft.PowerApps.CLI.Tool
-        
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Build PCF control
-      run: npm run build
-      
-    - name: Build solution
-      run: |
-        export PATH="$PATH:$HOME/.dotnet/tools"
-        cd Solution
-        dotnet build
-        
-    - name: Create managed solution
-      run: |
-        export PATH="$PATH:$HOME/.dotnet/tools"
-        cd Solution
-        dotnet build /p:configuration=Release
-        
-    - name: Rename solution artifact
-      id: rename_artifact
-      run: |
-        VERSION_NO_V="${GITHUB_REF_NAME#v}"
-        
-        SOURCE_ZIP=$(find Solution/bin/Release -maxdepth 1 -iname "*_managed.zip" | head -n 1)
-        if [ -z "$SOURCE_ZIP" ]; then
-          SOURCE_ZIP=$(find Solution/bin/Release -maxdepth 1 -iname "*.zip" | head -n 1)
-        fi
-        
-        if [ -z "$SOURCE_ZIP" ]; then
-          echo "Error: No solution zip found in Solution/bin/Release"
-          exit 1
-        fi
-        
-        if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-          TARGET_ZIP="Solution/bin/Release/PCF-JSONViewer-${VERSION_NO_V}.zip"
-        else
-          TARGET_ZIP="Solution/bin/Release/PCF-JSONViewer.zip"
-        fi
-        cp "$SOURCE_ZIP" "$TARGET_ZIP"
-        
-        echo "artifact_path=$TARGET_ZIP" >> $GITHUB_OUTPUT
-        echo "Renamed solution artifact from $SOURCE_ZIP to $TARGET_ZIP"
-        
-    - name: Upload solution artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: solution-packages
-        path: |
-          ${{ steps.rename_artifact.outputs.artifact_path }}
-        retention-days: 30
-        
-    - name: Attach artifacts to release
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v2
-      with:
-        files: ${{ steps.rename_artifact.outputs.artifact_path }}
-        fail_on_unmatched_files: false
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "6.x"
+
+      - name: Install Power Platform CLI
+        run: |
+          dotnet tool install --global Microsoft.PowerApps.CLI.Tool
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build PCF control
+        run: npm run build
+
+      - name: Build solution
+        run: |
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          cd Solution
+          dotnet build
+
+      - name: Debugging - List Solution Directory Contents
+        run: ls -R Solution
+
+      - name: Extract Solution Name and Version
+        id: extract_info
+        shell: pwsh
+        run: |
+          $xml = [xml](Get-Content ./Solution/src/Other/Solution.xml)
+          $solution_version = $xml.ImportExportXml.SolutionManifest.Version
+          $solution_name    = "$($xml.ImportExportXml.SolutionManifest.LocalizedNames.LocalizedName.description)".replace(" ", "_")
+
+          Write-Output "Solution: $solution_name"
+          Write-Output "Version:  $solution_version"
+          echo "solution_name=$solution_name" >> $env:GITHUB_ENV
+          echo "solution_version=$solution_version" >> $env:GITHUB_ENV
+          echo "version_part=0" >> $env:GITHUB_ENV
+
+      - name: Extract Tag Version
+        if: startsWith(github.ref, 'refs/tags/')
+        id: extract_tag_version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/v}
+          VERSION_PART=${TAG##*.}
+          echo "version_part=$VERSION_PART" >> $GITHUB_ENV
+
+      - name: Check Version
+        run: |
+          echo "Output [${{ env.solution_name }} v${{ env.solution_version }}]"
+          if [ -n "${{ env.version_part }}" ]; then
+            echo "Version part from tag: ${{ env.version_part }}"
+          fi
+
+      - name: Create managed solution
+        id: build_solution
+        shell: pwsh
+        working-directory: ./Solution # Sets the working directory to the solution directory
+        run: |
+          $env:PATH = "$env:PATH;$HOME/.dotnet/tools"
+          dotnet build /p:configuration=Release
+
+          $name     = "${{ env.solution_name }}_managed_${{ env.solution_version }}.${{ env.version_part }}.zip".replace(" ", "_")
+          $artifact = "./Solution/bin/Release/$name"
+          Write-Output "Artifact:  $artifact"
+          mv ./bin/Release/Solution.zip "./bin/Release/$name"
+
+          echo "artifact_name=$name" >> $env:GITHUB_ENV
+          echo "artifact=$artifact" >> $env:GITHUB_ENV
+
+      - name: Upload solution artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Artifacts
+          path: ${{ env.artifact }}
+          retention-days: 30
+
+      - name: Attach artifacts to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.artifact }}
+          fail_on_unmatched_files: false

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { JSONViewerComponent } from '../JSONViewerComponent';
 
 describe('JSONViewerComponent', () => {
@@ -84,5 +84,297 @@ describe('JSONViewerComponent', () => {
       border: '1px solid #d1d1d1',
       backgroundColor: '#f5f5f5'
     });
+  });
+
+  it('respects allocated height from parent container', () => {
+    const jsonContent = '{"test":"value"}';
+    const { container } = render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        allocatedHeight={300}
+      />
+    );
+    
+    const divElement = container.firstChild as HTMLElement;
+    expect(divElement).toHaveStyle({ height: '300px' });
+  });
+
+  it('respects allocated width from parent container', () => {
+    const jsonContent = '{"test":"value"}';
+    const { container } = render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        allocatedWidth={500}
+      />
+    );
+    
+    const divElement = container.firstChild as HTMLElement;
+    expect(divElement).toHaveStyle({ width: '500px' });
+  });
+
+  it('allows text selection when userSelect is set', () => {
+    const jsonContent = '{"test":"value"}';
+    const { container } = render(
+      <JSONViewerComponent content={jsonContent} indentation={2} readOnly={true} />
+    );
+    
+    const preElement = container.querySelector('pre') as HTMLElement;
+    expect(preElement).toHaveStyle({ userSelect: 'text' });
+  });
+
+  it('renders copy button', () => {
+    const jsonContent = '{"test":"value"}';
+    render(<JSONViewerComponent content={jsonContent} indentation={2} readOnly={true} />);
+    
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    expect(copyButton).toBeInTheDocument();
+    expect(copyButton).toHaveTextContent(/Copy/i);
+  });
+
+  it('shows success message after copying', async () => {
+    const jsonContent = '{"test":"value"}';
+    
+    // Mock clipboard API
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: jest.fn(() => Promise.resolve()),
+      },
+    });
+    
+    render(<JSONViewerComponent content={jsonContent} indentation={2} readOnly={true} />);
+    
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    fireEvent.click(copyButton);
+    
+    // Wait for the success message
+    await screen.findByText(/Copied!/i);
+    expect(copyButton).toHaveTextContent(/Copied!/i);
+  });
+
+  it('allows editing when readOnly is false', () => {
+    const jsonContent = '{"test":"value"}';
+    const { container } = render(
+      <JSONViewerComponent content={jsonContent} indentation={2} readOnly={false} />
+    );
+    
+    const preElement = container.querySelector('pre') as HTMLElement;
+    expect(preElement).toHaveAttribute('contentEditable', 'true');
+  });
+
+  it('disables editing when readOnly is true', () => {
+    const jsonContent = '{"test":"value"}';
+    const { container } = render(
+      <JSONViewerComponent content={jsonContent} indentation={2} readOnly={true} />
+    );
+    
+    const preElement = container.querySelector('pre') as HTMLElement;
+    expect(preElement).toHaveAttribute('contentEditable', 'false');
+  });
+
+  it('calls onContentChange when content is edited', () => {
+    const jsonContent = '{"test":"value"}';
+    const onContentChange = jest.fn();
+    const { container } = render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={false}
+        onContentChange={onContentChange}
+      />
+    );
+    
+    const preElement = container.querySelector('pre') as HTMLElement;
+    
+    // Simulate content edit
+    fireEvent.input(preElement, { target: { textContent: '{"test":"newvalue"}' } });
+    
+    expect(onContentChange).toHaveBeenCalled();
+  });
+
+  it('uses default dimensions when allocatedHeight is not provided', () => {
+    const jsonContent = '{"test":"value"}';
+    const { container } = render(
+      <JSONViewerComponent content={jsonContent} indentation={2} readOnly={true} />
+    );
+    
+    const divElement = container.firstChild as HTMLElement;
+    expect(divElement).toHaveStyle({ height: '400px' });
+  });
+
+  it('uses 100% height when allocatedHeight is -1', () => {
+    const jsonContent = '{"test":"value"}';
+    const { container } = render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        allocatedHeight={-1}
+      />
+    );
+    
+    const divElement = container.firstChild as HTMLElement;
+    expect(divElement).toHaveStyle({ height: '100%' });
+  });
+
+  it('uses 100% width when allocatedWidth is -1', () => {
+    const jsonContent = '{"test":"value"}';
+    const { container } = render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        allocatedWidth={-1}
+      />
+    );
+    
+    const divElement = container.firstChild as HTMLElement;
+    expect(divElement).toHaveStyle({ width: '100%' });
+  });
+
+  it('uses default height when allocatedHeight is 0', () => {
+    const jsonContent = '{"test":"value"}';
+    const { container } = render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        allocatedHeight={0}
+      />
+    );
+    
+    const divElement = container.firstChild as HTMLElement;
+    expect(divElement).toHaveStyle({ height: '400px' });
+  });
+
+  it('hides copy button when showCopyButton is false', () => {
+    const jsonContent = '{"test":"value"}';
+    render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        showCopyButton={false}
+      />
+    );
+    
+    const copyButton = screen.queryByTitle('Copy to clipboard');
+    expect(copyButton).not.toBeInTheDocument();
+  });
+
+  it('shows copy button when showCopyButton is true', () => {
+    const jsonContent = '{"test":"value"}';
+    render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        showCopyButton={true}
+      />
+    );
+    
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    expect(copyButton).toBeInTheDocument();
+  });
+
+  it('uses custom icon when copyButtonIcon is provided', () => {
+    const jsonContent = '{"test":"value"}';
+    render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        copyButtonIcon="📄"
+      />
+    );
+    
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    expect(copyButton).toHaveTextContent('📄 Copy');
+  });
+
+  it('renders SVG icon when copyButtonSvg is provided', () => {
+    const jsonContent = '{"test":"value"}';
+    const svgIcon = '<svg width="16" height="16"><rect width="16" height="16" fill="blue"/></svg>';
+    const { container } = render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        copyButtonSvg={svgIcon}
+      />
+    );
+    
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    expect(copyButton).toBeInTheDocument();
+    const svgElement = container.querySelector('svg');
+    expect(svgElement).toBeInTheDocument();
+  });
+
+  it('adjusts padding when copy button is hidden', () => {
+    const jsonContent = '{"test":"value"}';
+    const { container } = render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        showCopyButton={false}
+      />
+    );
+    
+    const preElement = container.querySelector('pre') as HTMLElement;
+    expect(preElement).toHaveStyle({ paddingTop: '12px' });
+  });
+
+  it('sanitizes unsafe SVG content', () => {
+    const jsonContent = '{"test":"value"}';
+    const unsafeSvg = '<svg><script>alert("xss")</script><rect onclick="alert(1)"/></svg>';
+    
+    // Mock console.warn to verify it was called
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    
+    const { container } = render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        copyButtonSvg={unsafeSvg}
+      />
+    );
+    
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    expect(copyButton).toBeInTheDocument();
+    
+    // Should not contain script tags
+    const scriptElement = container.querySelector('script');
+    expect(scriptElement).not.toBeInTheDocument();
+    
+    consoleWarnSpy.mockRestore();
+  });
+
+  it('falls back to icon when SVG is invalid', () => {
+    const jsonContent = '{"test":"value"}';
+    const invalidSvg = '<notsvg>invalid</notsvg>';
+    
+    // Mock console.warn
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    
+    render(
+      <JSONViewerComponent 
+        content={jsonContent} 
+        indentation={2} 
+        readOnly={true}
+        copyButtonIcon="📄"
+        copyButtonSvg={invalidSvg}
+      />
+    );
+    
+    const copyButton = screen.getByTitle('Copy to clipboard');
+    expect(copyButton).toHaveTextContent('📄 Copy');
+    expect(consoleWarnSpy).toHaveBeenCalled();
+    
+    consoleWarnSpy.mockRestore();
   });
 });

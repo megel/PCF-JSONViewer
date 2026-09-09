@@ -21,6 +21,9 @@
     <property name="content" display-name-key="Content" description-key="The JSON text to display in the viewer" of-type="Multiple" usage="bound" required="true" />
     <property name="indentation" display-name-key="Indentation" description-key="Indentation size for pretty printing (0 = minimized, >0 = number of spaces)" of-type="Whole.None" usage="input" required="false" default-value="2" />
     <property name="readOnly" display-name-key="Read Only" description-key="Enable/disable editing (read-only mode)" of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="showCopyButton" display-name-key="Show Copy Button" description-key="Show/hide the copy to clipboard button" of-type="TwoOptions" usage="input" required="false" default-value="true" />
+    <property name="copyButtonIcon" display-name-key="Copy Button Icon" description-key="Icon/emoji to display on the copy button (e.g., 📋, 📄, 📑). For SVG, use copyButtonSvg instead." of-type="SingleLine.Text" usage="input" required="false" default-value="📋" />
+    <property name="copyButtonSvg" display-name-key="Copy Button SVG" description-key="SVG markup for the copy button icon. If provided, this will be used instead of copyButtonIcon." of-type="Multiple" usage="input" required="false" />
     <!--
       Property node's of-type attribute can be of-type-group attribute.
       Example:
@@ -35,7 +38,7 @@
     <resources>
       <code path="index.ts" order="1"/>
       <platform-library name="React" version="16.14.0" />
-      <platform-library name="Fluent" version="9.68.0" />
+      <platform-library name="Fluent" version="9.46.2" />
       <!-- UNCOMMENT TO ADD MORE RESOURCES
       <css path="css/JSONViewer.css" order="1" />
       <resx path="strings/JSONViewer.1033.resx" version="1.0.0" />

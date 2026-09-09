@@ -6,7 +6,10 @@ PCF Control for PowerApps (canvas and model-driven apps) that visualizes JSON as
 
 - 📊 Pretty-print JSON data with customizable indentation
 - 🎨 Syntax highlighting for improved readability
-- 📏 Automatic height adjustment based on content
+- 📐 Respects parent container size boundaries
+- ✏️ Optional edit mode for JSON content
+- 📋 Copy to clipboard button with customizable icons
+- 🎯 Text selection enabled
 - 🔒 Read-only mode support
 - 📱 Works in both Canvas and Model-Driven apps
 - ⚡ Built with React and TypeScript
@@ -40,7 +43,35 @@ The JSONViewer control exposes the following configurable properties:
 - **Description**: Enable/disable editing mode
 - **Default**: True (read-only)
 - **Usage**: Input property
-- **Note**: Currently the control displays JSON in read-only mode. This property is reserved for future edit functionality.
+- **Note**: When set to `false`, users can directly edit the JSON content in the viewer. Changes are automatically synced back to the bound property.
+
+### ShowCopyButton (Optional)
+- **Type**: Boolean (TwoOptions)
+- **Description**: Show or hide the copy to clipboard button
+- **Default**: True (button visible)
+- **Usage**: Input property
+- **Example**: Set to `false` to hide the copy button
+
+### CopyButtonIcon (Optional)
+- **Type**: String (Single line)
+- **Description**: Icon or emoji to display on the copy button
+- **Default**: "📋" (clipboard emoji)
+- **Usage**: Input property
+- **Examples**: "📄", "📑", "📝", "🗐"
+- **Note**: This is used when `CopyButtonSvg` is not provided
+
+### CopyButtonSvg (Optional)
+- **Type**: String (Multiple lines)
+- **Description**: Custom SVG markup for the copy button icon
+- **Default**: None
+- **Usage**: Input property
+- **Note**: When provided, this takes precedence over `CopyButtonIcon`. See [Copy Button Icons Guide](docs/copy-button-icons.md) for examples.
+- **Example**: 
+  ```svg
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <rect x="2" y="2" width="9" height="11" rx="1" stroke="currentColor"/>
+  </svg>
+  ```
 
 ## Prerequisites
 
@@ -166,7 +197,10 @@ The solution packages will be available in `Solution/bin/Release/`.
 5. Configure the control properties:
    - **Content**: Bind to the field containing JSON data
    - **Indentation**: Set the desired indentation (default: 2)
-   - **ReadOnly**: Set to true for display-only mode
+   - **ReadOnly**: Set to false to enable editing
+   - **ShowCopyButton**: Toggle copy button visibility (default: true)
+   - **CopyButtonIcon**: Set a custom emoji icon (e.g., "📄")
+   - **CopyButtonSvg**: Provide custom SVG markup for the icon
 6. Save and publish your form
 
 #### In Canvas Apps
@@ -176,7 +210,10 @@ The solution packages will be available in `Solution/bin/Release/`.
 3. Configure the control properties in the properties panel:
    - **Content**: Set to a variable or field containing JSON (e.g., `MyVariable` or `Gallery1.Selected.JSONData`)
    - **Indentation**: Enter a number for indentation spacing (default: 2)
-   - **ReadOnly**: Toggle for read-only mode
+   - **ReadOnly**: Toggle for read-only/edit mode
+   - **ShowCopyButton**: Toggle copy button visibility (default: true)
+   - **CopyButtonIcon**: Enter emoji or text for button icon (e.g., "📄")
+   - **CopyButtonSvg**: Paste SVG markup for custom icon
 4. Save and publish your app
 
 #### Example Usage Scenarios
@@ -199,9 +236,43 @@ YourAPIConnector.GetData().JSONResponse
 - Compact: `Indentation = 0` (single line)
 - Wide: `Indentation = 4`
 
+**Enable editing:**
+```javascript
+// Set ReadOnly property to false
+ReadOnly = false
+```
+
+**Customize copy button:**
+```javascript
+// Use a different emoji
+CopyButtonIcon = "📄"
+
+// Or hide the copy button
+ShowCopyButton = false
+
+// Or use a custom SVG icon (see docs/copy-button-icons.md for examples)
+CopyButtonSvg = "<svg width='16' height='16'><path d='...' /></svg>"
+```
+
 ## Development Guidelines
 
 Please refer to [Copilot Instructions](.github/copilot-instructions.md) for detailed development guidelines and best practices.
+
+## Technical Notes
+
+### FluentUI Version Compatibility
+
+This control uses FluentUI v9.68.0 for its React components. Due to Power Platform limitations, the `ControlManifest.Input.xml` file declares FluentUI version `9.46.2` while `package.json` specifies `@fluentui/react-components` version `9.68.0`.
+
+**Why this approach?**
+- Power Platform's supported library list doesn't include FluentUI 9.68.0 directly
+- The platform will load FluentUI 9.68.0 at runtime despite the manifest declaring 9.46.2
+- This is the [recommended workaround](https://learn.microsoft.com/en-us/power-apps/developer/component-framework/react-controls-platform-libraries#supported-platform-libraries-list) from Microsoft
+
+**Important:** When updating FluentUI versions:
+1. Update `@fluentui/react-components` in `package.json` to the desired version
+2. Keep the `platform-library` version in `ControlManifest.Input.xml` at `9.46.2` (or latest officially supported version)
+3. Test thoroughly in both Canvas and Model-Driven apps
 
 ## CI/CD
 
