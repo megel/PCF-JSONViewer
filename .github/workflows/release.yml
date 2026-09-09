@@ -166,6 +166,12 @@ jobs:
           
           git add package.json Solution/src/Other/Solution.xml
           git commit -m "chore: release $NEW_VERSION"
+          
+          # Rebase onto the latest main before pushing to avoid non-fast-forward
+          # failures caused by other commits landing on main while this job runs.
+          git fetch origin main
+          git rebase origin/main
+          
           git push origin main
           
       - name: Create and push tag
