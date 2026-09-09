@@ -34,12 +34,15 @@ export class JSONViewer implements ComponentFramework.ReactControl<IInputs, IOut
      * @returns ReactElement root react element for the control
      */
     public updateView(context: ComponentFramework.Context<IInputs>): React.ReactElement {
-        const content = context.parameters.content.raw ?? '';
-        const indentation = context.parameters.indentation.raw ?? 2;
-        const readOnly = context.parameters.readOnly.raw ?? true;
-        const showCopyButton = context.parameters.showCopyButton.raw ?? true;
-        const copyButtonIcon = context.parameters.copyButtonIcon.raw ?? '📋';
-        const copyButtonSvg = context.parameters.copyButtonSvg.raw ?? undefined;
+        // Property bag values (e.g. content.raw) can be null/undefined when bound to a
+        // field on a new, unsaved record (no data present yet), so every parameter is
+        // accessed defensively with optional chaining and a fallback default.
+        const content = context.parameters.content?.raw ?? '';
+        const indentation = context.parameters.indentation?.raw ?? 2;
+        const readOnly = context.parameters.readOnly?.raw ?? true;
+        const showCopyButton = context.parameters.showCopyButton?.raw ?? true;
+        const copyButtonIcon = context.parameters.copyButtonIcon?.raw ?? '📋';
+        const copyButtonSvg = context.parameters.copyButtonSvg?.raw ?? undefined;
         
         this.currentContent = content;
         
