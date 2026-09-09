@@ -51,17 +51,42 @@ jobs:
         cd Solution
         dotnet build /p:configuration=Release
         
+    - name: Rename solution artifact
+      id: rename_artifact
+      run: |
+        VERSION_NO_V="${GITHUB_REF_NAME#v}"
+        
+        SOURCE_ZIP=$(find Solution/bin/Release -maxdepth 1 -iname "*_managed.zip" | head -n 1)
+        if [ -z "$SOURCE_ZIP" ]; then
+          SOURCE_ZIP=$(find Solution/bin/Release -maxdepth 1 -iname "*.zip" | head -n 1)
+        fi
+        
+        if [ -z "$SOURCE_ZIP" ]; then
+          echo "Error: No solution zip found in Solution/bin/Release"
+          exit 1
+        fi
+        
+        if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+          TARGET_ZIP="Solution/bin/Release/PCF-JSONViewer-${VERSION_NO_V}.zip"
+        else
+          TARGET_ZIP="Solution/bin/Release/PCF-JSONViewer.zip"
+        fi
+        cp "$SOURCE_ZIP" "$TARGET_ZIP"
+        
+        echo "artifact_path=$TARGET_ZIP" >> $GITHUB_OUTPUT
+        echo "Renamed solution artifact from $SOURCE_ZIP to $TARGET_ZIP"
+        
     - name: Upload solution artifacts
       uses: actions/upload-artifact@v4
       with:
         name: solution-packages
         path: |
-          Solution/bin/Release/*.zip
+          ${{ steps.rename_artifact.outputs.artifact_path }}
         retention-days: 30
         
     - name: Attach artifacts to release
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
       with:
-        files: Solution/bin/Release/*.zip
+        files: ${{ steps.rename_artifact.outputs.artifact_path }}
         fail_on_unmatched_files: false
