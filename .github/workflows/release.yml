@@ -197,6 +197,28 @@ jobs:
           cd Solution
           dotnet build /p:configuration=Release
           
+      - name: Rename solution artifact
+        id: rename_artifact
+        run: |
+          NEW_VERSION="${{ steps.create_tag.outputs.tag_name }}"
+          VERSION_NO_V=${NEW_VERSION#v}
+          
+          SOURCE_ZIP=$(find Solution/bin/Release -maxdepth 1 -iname "*_managed.zip" | head -n 1)
+          if [ -z "$SOURCE_ZIP" ]; then
+            SOURCE_ZIP=$(find Solution/bin/Release -maxdepth 1 -iname "*.zip" | head -n 1)
+          fi
+          
+          if [ -z "$SOURCE_ZIP" ]; then
+            echo "Error: No solution zip found in Solution/bin/Release"
+            exit 1
+          fi
+          
+          TARGET_ZIP="Solution/bin/Release/PCF-JSONViewer-${VERSION_NO_V}.zip"
+          cp "$SOURCE_ZIP" "$TARGET_ZIP"
+          
+          echo "artifact_path=$TARGET_ZIP" >> $GITHUB_OUTPUT
+          echo "Renamed solution artifact from $SOURCE_ZIP to $TARGET_ZIP"
+          
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -204,6 +226,6 @@ jobs:
           name: Release ${{ steps.create_tag.outputs.tag_name }}
           generate_release_notes: true
           files: |
-            Solution/bin/Release/*.zip
+            ${{ steps.rename_artifact.outputs.artifact_path }}
           draft: false
           prerelease: false
